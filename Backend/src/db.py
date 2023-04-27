@@ -19,7 +19,7 @@ user_group_association_table = db.Table("user_group_assoc",
 class User(db.model):
    __tablename__ = "user"
 
-   id = db.Column(db.Integer, primary_key = True)
+   id = db.Column(db.Integer, primary_key = True, autoincrement = True)
    net_id = db.Column(db.String, unique = True, nullable = False)
    name = db.Column(db.String, nuble = False)
    bio = db.Column(db.String, nullable = True )
