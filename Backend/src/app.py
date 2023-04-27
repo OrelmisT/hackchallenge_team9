@@ -45,7 +45,7 @@ def register_user():
     
     return success_response({
         "session_token": user.session_token,
-        "session_experiation": user.session_expiration,
+        "session_experiation": str(user.session_expiration),
         "update_token": user.update_token
     })
 

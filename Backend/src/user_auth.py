@@ -55,7 +55,7 @@ def create_user(net_id, name, bio, password):
     user = User(net_id = net_id, name=name, bio = bio, password = password)
 
     db.session.add(user)
-    db.commit()
+    db.session.commit()
 
     return True, user 
 

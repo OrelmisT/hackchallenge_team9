@@ -11,7 +11,7 @@ db = SQLAlchemy()
 
 user_group_association_table = db.Table("user_group_assoc", 
   db.Column("user_id", db.Integer, db.ForeignKey("user.id")),
-  db.Column("group_id", db.Integer, db.ForeignKey("user.id"))
+  db.Column("group_id", db.Integer, db.ForeignKey("group.id"))
 )
 
 #MODELS
