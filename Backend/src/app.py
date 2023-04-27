@@ -1,7 +1,7 @@
 from db import db
 from flask import Flask, request
 import json
-# from db import [Model_Name]
+from db import User
 import os
 import user_auth
 

@@ -16,12 +16,12 @@ user_group_association_table = db.Table("user_group_assoc",
 
 #MODELS
 
-class User(db.model):
+class User(db.Model):
    __tablename__ = "user"
 
    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
    net_id = db.Column(db.String, unique = True, nullable = False)
-   name = db.Column(db.String, nuble = False)
+   name = db.Column(db.String, nullable = False)
    bio = db.Column(db.String, nullable = True )
    groups = db.relationship("Group", secondary= user_group_association_table,
                              back_populates="users")
@@ -104,7 +104,7 @@ class User(db.model):
 
 
 #implementation not complete
-class Group(db.model):
+class Group(db.Model):
     __tablename__ = "group"
     id = db.Column(db.Integer, primary_key = True)
     users = db.relationship("User", secondary= user_group_association_table,
