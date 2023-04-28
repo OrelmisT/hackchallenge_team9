@@ -66,6 +66,8 @@ def register_user():
 @app.route("/login/", methods = ["POST"])
 def login():
 
+    #Checking net_id and password
+
     body = json.loads(request.data)
     
     net_id = body.get("net_id")
@@ -77,11 +79,20 @@ def login():
     if not success:
         return fail_response("Incorrect username or password.")
     
-    return success_response({
-        "session_token": user.session_token,
-        "session_expiration": str(user.session_expiration),
-        "update_token": user.update_token 
-    })
+    #Renewing the session (because logout automatically expires previous session)
+
+    update_token = user.update_token 
+    user_with_updated_tokens = user_auth.renew_session(update_token)
+
+    if user_with_updated_tokens is None:
+        return fail_response("Invalid update token.")
+    return success_response(
+        {
+        "session_token": user_with_updated_tokens.session_token,
+        "session_expiration": str(user_with_updated_tokens.session_expiration),
+        "update_token": user_with_updated_tokens.update_token
+        }
+    )
 
 @app.route("/session/", methods = ["POST"])
 def update_session():

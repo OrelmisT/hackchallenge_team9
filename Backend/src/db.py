@@ -98,21 +98,52 @@ class User(db.Model):
        
    
 
+class Course(db.Model):
+   __tablename__ = "course"
+   id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+   course_title = db.Column(db.String, nullable = False)
+   course_code = db.Column(db.String, nullable = False, unique = True)
+   groups = db.relationship("Group", cascade = "delete")
+   
+   def __init__(self, **kwargs):
+       self.course_title = kwargs.get("course_title")
+       self.course_code = kwargs.get("course_code")
+
+   #Serialization
+
+   def serialize(self):
+       return {
+           "id": self.id,
+           "course_title": self.course_title,
+           "groups": [g.serialize_simple() for g in self.groups]
+       }
+   
+   def serialize_simple(self):
+       return{
+           "id": self.id,
+           "course_title": self.course_title
+       }
+
+    
+    
 
 
-# class Course(db.model):
-
-
-#implementation not complete
+#implementation not complete (we need to add in events and requests, and serialization funcs)
 class Group(db.Model):
     __tablename__ = "group"
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     users = db.relationship("User", secondary= user_group_association_table,
                              back_populates="groups")
+    course_id = db.Column(db.Integer, db.ForeignKey("course.id"), nullable = False)
+    accepting_members = db.Column(db.Boolean, nullable = False)
     
     def __init__(self, **kwargs):
-      self.id = kwargs.get("id")
-      self.users = [u.serialize_simple for u in self.users]
+      self.course_id = kwargs.get("course_id")
+      self.accepting_members = True
+
+   
         
     
-# class Event(db.model):
+# class Event(db.Model):
+
+#class Request(db.Model)
