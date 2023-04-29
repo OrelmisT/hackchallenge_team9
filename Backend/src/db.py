@@ -145,5 +145,37 @@ class Group(db.Model):
         
     
 # class Event(db.Model):
+class Event(db.Model):
+    """
+    Event object.
+    """    
+    __tablename__ = "events"    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)    
+    description = db.Column(db.String, nullable=False)
+    location = db.Column(db.String, nullable=False)        
+    time = db.Column(db.Integer, nullable=False)    
+    attendee = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    def __init__(self, **kwargs):
+        """
+        Initialize an Event object.
+        """
+        self.description = kwargs.get("description", "")
+        self.location = kwargs.get("location", "")
+        self.time = kwargs.get("time", "")
+        self.attendee = kwargs.get("attendee")
+
+    def serialize(self):
+        """
+        Serialize an Event object.
+        """
+        attendees = [a.serialize_wo() for a in self.user_id]
+        return {
+            "id": self.id,
+            "description": self.description,
+            "location": self.location,
+            "time": self.time,
+            "attendee": attendees.serialize_wo()
+        }
 
 #class Request(db.Model)
