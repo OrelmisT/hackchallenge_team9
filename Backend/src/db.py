@@ -175,7 +175,35 @@ class Event(db.Model):
             "description": self.description,
             "location": self.location,
             "time": self.time,
-            "attendee": attendees.serialize_wo()
+            "attendee": attendees.serialize()
         }
 
 #class Request(db.Model)
+class Request(db.Model):
+    """
+    Request object.
+    """    
+    __tablename__ = "requets"    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    status = db.Column(db.Boolean, nullable=False)        
+
+
+    def __init__(self, **kwargs):
+        """
+        Initialize an Request object.
+        """
+        self.description = kwargs.get("description", "")
+        self.user_id = kwargs.get("user_id", "")
+        self.status = kwargs.get("status")
+
+    def serialize(self):
+        """
+        Serialize an Request object.
+        """
+        user = User.query.filter_by(id=self.user_id).first()
+        return {
+            "id": self.id,
+            "user": user.serialize(),
+            "status": self.status
+        }
