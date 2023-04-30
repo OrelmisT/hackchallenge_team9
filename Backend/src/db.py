@@ -186,7 +186,7 @@ class Event(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable = False)    
     description = db.Column(db.String, nullable=False)
     location = db.Column(db.String, nullable=False)        
-    time = db.Column(db.Integer, nullable=False)    
+    time = db.Column(db.DateTime, nullable=False)    
     attendees = db.relationship("User", secondary= user_event_association_table,
                              back_populates="events_attending")
 
@@ -194,10 +194,16 @@ class Event(db.Model):
         """
         Initialize an Event object.
         """
+        self.group_id = kwargs.get("group_id")
         self.description = kwargs.get("description", "")
         self.location = kwargs.get("location", "")
-        self.time = kwargs.get("time", "")
-        self.attendee = kwargs.get("attendee")
+        year = kwargs.get("year")
+        month = kwargs.get("month")
+        day = kwargs.get("day")
+        hour = kwargs.get("hour")
+        minute = kwargs.get("minute")
+        self.time = datetime.datetime(year=year,month=month,day=day,hour=hour,minute=minute)
+        
 
     def serialize(self):
         """
@@ -207,15 +213,15 @@ class Event(db.Model):
             "id": self.id,
             "description": self.description,
             "location": self.location,
-            "time": self.time,
-            "attendee": [u.serialize() for u in self.attendees]
+            "time": str(self.time),
+            "attendees": [u.serialize_simple() for u in self.attendees]
         }
-    def serialize(self):
+    def serialize_simple(self):
         return {
             "id": self.id,
             "description": self.description,
             "location": self.location,
-            "time": self.time
+            "time": str(self.time)
         }
 
 #class Request(db.Model)

@@ -5,6 +5,7 @@ from db import User
 from db import Course
 from db import Group
 from db import Request
+from db import Event
 import os
 import user_auth
 import datetime
@@ -397,14 +398,52 @@ def get_request(request_id):
     
     return success_response(the_request.serialize())
 
+@app.route("/groups/<int:group_id>/events/", methods = ["POST"])
+def create_event(group_id):
 
+    group = Group.query.filter_by(id = group_id).first()
+    if group is None:
+        return fail_response("No group with this id exists.")
+    
+    body = json.loads(request.data)
+    description = body.get("description")
+    location = body.get("location")
+    year = body.get("year")
+    month = body.get("month")
+    day = body.get("day")
+    hour = body.get("hour")
+    minute = body.get("minute")
 
-
+    if year is None or month is None or day is None or hour is None or minute is None or location is None or description is None:
+        return fail_response("Missing location, time, or description")
         
 
+    #Verifying session 
+    success, session_token = extract_token_from_header(request)
+    if not success:
+        return fail_response(session_token)
+    user = user_auth.get_user_by_session_token(session_token)
+    if user is None or not user.verify_session_token(session_token):
+        return fail_response("Invalid session token")
+    
+    #Checking if is member of group
+    preexisting_request = Request.query.filter_by(group_id = group_id, user_id = user.id, status = True).first()
+    is_admin = (user.id == group.admin_id)
 
+    if preexisting_request is None and (not is_admin):
+        return fail_response("User is not a member of this group")
+    
+    new_event = Event(group_id = group_id, description = description, 
+                      location = location, year = year, month = month, day = day,
+                      hour = hour, minute = minute)
 
+    new_event.attendees.append(user)
 
+    db.session.add(new_event)
+    db.session.commit()
+
+    return success_response(new_event.serialize())
+    
 
 
 if __name__ == "__main__":
