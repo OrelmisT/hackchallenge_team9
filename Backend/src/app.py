@@ -4,6 +4,7 @@ import json
 from db import User
 from db import Course
 from db import Group
+from db import Request
 import os
 import user_auth
 import datetime
@@ -186,7 +187,67 @@ def create_group():
     db.session.commit()
 
     return success_response(new_group.serialize())
+
+@app.route("/groups/", methods = ["GET"])
+def get_groups():
+
+    body = json.loads(request.data)
+    course_code = body.get("course_code")
+
+    #If no filtering by course code, get all groups.
+    if course_code is None:
+        groups = [g.serialize() for g in Group.query.all()]
+        return success_response({"groups": groups})
     
+    #Get groups by course code
+    optional_course = Course.query.filter_by(course_code = course_code).first()
+
+    if optional_course is None:
+        return fail_response("A course with this code does not exist.")
+
+    groups = [g.serialize() for g in Group.query.filter_by(course_id = optional_course.id).all()]
+
+    return success_response({"groups": groups})
+    
+
+
+@app.route("/groups/<int:group_id>/", methods = ["GET"])
+def get_group(group_id):
+    group = Group.query.filter_by(id = group_id).first()
+    if group is None:
+        return fail_response("A group with this id does not exist.")
+    return success_response(group.serialize())
+
+@app.route("/groups/<int:group_id>/requests/", methods = ["POST"])
+def create_request(group_id):
+
+    optional_group = Group.query.filter_by(id = group_id).first()
+    if optional_group is None:
+        return fail_response("No group with this id exists.")
+
+    #Verifying session 
+    success, session_token = extract_token_from_header(request)
+    if not success:
+        return fail_response(session_token)
+    user = user_auth.get_user_by_session_token(session_token)
+    if user is None or not user.verify_session_token(session_token):
+        return fail_response("Invalid session token")
+    
+    #Checking if already member of group, or already created request.
+    preexisting_request = Request.query.filter_by(group_id = group_id, user_id = user.id).first()
+    is_admin = (user.id == optional_group.admin_id)
+
+    if (not preexisting_request is None) or is_admin:
+        return fail_response("User is already member of group or has already made request to join.")
+
+    new_request = Request(group_id = group_id, user_id = user.id, status = None)
+
+    db.session.add(new_request)
+    db.session.commit()
+
+    return success_response(new_request.serialize())    
+
+
         
 
 

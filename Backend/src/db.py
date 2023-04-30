@@ -93,7 +93,8 @@ class User(db.Model):
            "net_id": self.net_id,
            "name": self.name,
            "bio": self.bio,
-           "groups": [g.serialize_simple for g in self.groups]
+           "groups": [g.serialize_simple for g in self.groups],
+           "events_attending": [e.serialize() for e in self.events_attending]
 
        }
    def serialize_simple(self):
@@ -161,7 +162,7 @@ class Group(db.Model):
             "admin_id" : self.admin_id,
             "users": [u.serialize_simple() for u in self.users],
             "events": [e.serialize_simple() for e in self.events],
-            "requests": [r.serialize_simple() for r in self.requests],
+            "requests": [r.serialize() for r in self.requests],
             "accepting_members": self.accepting_members
         }
     
@@ -209,6 +210,13 @@ class Event(db.Model):
             "time": self.time,
             "attendee": [u.serialize() for u in self.attendees]
         }
+    def serialize(self):
+        return {
+            "id": self.id,
+            "description": self.description,
+            "location": self.location,
+            "time": self.time
+        }
 
 #class Request(db.Model)
 class Request(db.Model):
@@ -219,15 +227,15 @@ class Request(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable = False)    
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    status = db.Column(db.Boolean, nullable=False)        
+    status = db.Column(db.Boolean, nullable=True)        
 
 
     def __init__(self, **kwargs):
         """
         Initialize an Request object.
         """
-        self.description = kwargs.get("description", "")
-        self.user_id = kwargs.get("user_id", "")
+        self.group_id = kwargs.get("group_id")
+        self.user_id = kwargs.get("user_id")
         self.status = kwargs.get("status")
 
     def serialize(self):
@@ -237,6 +245,6 @@ class Request(db.Model):
         user = User.query.filter_by(id=self.user_id).first()
         return {
             "id": self.id,
-            "user": user.serialize(),
+            "user": user.serialize_simple(),
             "status": self.status
         }
