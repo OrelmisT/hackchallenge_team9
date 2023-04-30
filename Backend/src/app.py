@@ -245,7 +245,62 @@ def create_request(group_id):
     db.session.add(new_request)
     db.session.commit()
 
-    return success_response(new_request.serialize())    
+    return success_response(new_request.serialize())   
+
+
+    
+@app.route("/requests/<int:request_id>/", methods = ["POST"])
+def accept_deny_request(request_id):
+
+    body = json.loads(request.data)
+    response = body.get("response")
+    if response is None:
+        return fail_response("Invalid response.")
+
+    join_request = Request.query.filter_by(id = request_id).first()
+
+    if join_request is None:
+        return fail_response("No request with this id exists.")
+    
+    group = Group.query.filter_by(id = join_request.group_id ).first()
+
+
+    if group is None:
+        return fail_response("The group this request was made for no longer exists.")
+    
+    if not (join_request.status is None):
+        return fail_response("Request has already been accepted or denied.")
+    
+    request_maker = User.query.filter_by(id = join_request.user_id).first()
+    if request_maker is None:
+        return fail_response("Request maker no longer exists.")
+    
+    #Verifying session 
+    success, session_token = extract_token_from_header(request)
+    if not success:
+        return fail_response(session_token)
+    user = user_auth.get_user_by_session_token(session_token)
+    if user is None or not user.verify_session_token(session_token):
+        return fail_response("Invalid session token")
+    
+    is_admin = (user.id == group.admin_id)
+
+    if not is_admin:
+        return fail_response("Group admin permission required.")
+    
+    if (response == False):
+        join_request.status = False
+        db.session.commit()
+        return success_response(join_request.serialize()) 
+    
+    join_request.status = True
+    group.users.append(request_maker)
+    db.session.commit()
+    return success_response (join_request.serialize())
+    
+
+    
+
 
 
         
