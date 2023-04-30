@@ -136,11 +136,33 @@ class Group(db.Model):
                              back_populates="groups")
     course_id = db.Column(db.Integer, db.ForeignKey("course.id"), nullable = False)
     accepting_members = db.Column(db.Boolean, nullable = False)
+    admin_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = False)
+    events = db.relationship("Event", cascade = "delete")
+    requests = db.relationship("Request", cascade = "delete")
     
     def __init__(self, **kwargs):
       self.course_id = kwargs.get("course_id")
       self.accepting_members = True
+      self.admin_id = kwargs.get("admin_id")
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "course_id" : self.course_id,
+            "admin_id" : self.admin_id,
+            "users": [u.serialize_simple() for u in self.users],
+            "events": [e.serialize_simple() for e in self.events],
+            "requests": [r.serialize_simple() for r in self.requests],
+            "accepting_members": self.accepting_members
+        }
+    
+    def serialize(self):
+        return{
+            "id": self.id,
+            "course_id": self.course_id,
+            "admin_id": self.admin_id,
+            "accepting_members": self.accepting_members
+        }
    
         
     
@@ -150,7 +172,8 @@ class Event(db.Model):
     Event object.
     """    
     __tablename__ = "events"    
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable = False)    
     description = db.Column(db.String, nullable=False)
     location = db.Column(db.String, nullable=False)        
     time = db.Column(db.Integer, nullable=False)    
@@ -183,8 +206,9 @@ class Request(db.Model):
     """
     Request object.
     """    
-    __tablename__ = "requets"    
+    __tablename__ = "request"    
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable = False)    
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     status = db.Column(db.Boolean, nullable=False)        
 
