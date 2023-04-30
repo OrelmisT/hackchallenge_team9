@@ -224,6 +224,9 @@ def create_request(group_id):
     optional_group = Group.query.filter_by(id = group_id).first()
     if optional_group is None:
         return fail_response("No group with this id exists.")
+    
+    if not optional_group.accepting_members:
+        return fail_response("This group is not accepting requests at this time.")
 
     #Verifying session 
     success, session_token = extract_token_from_header(request)
@@ -297,7 +300,39 @@ def accept_deny_request(request_id):
     group.users.append(request_maker)
     db.session.commit()
     return success_response (join_request.serialize())
+
+
+@app.route("/groups/<int:group_id>/accepting/", methods = ["POST"])
+def close_open_group(group_id):
+
+    body = json.loads(request.data)
+    accepting_members = body.get("accepting_members")
+
+    if accepting_members is None:
+        return fail_response("Invalid member acceptance status.")
+
+    group = Group.query.filter_by(id = group_id).first()
+
+    if group is None:
+        return fail_response("Group with this id does not exist.")
+
+    #Verifying session 
+    success, session_token = extract_token_from_header(request)
+    if not success:
+        return fail_response(session_token)
+    user = user_auth.get_user_by_session_token(session_token)
+    if user is None or not user.verify_session_token(session_token):
+        return fail_response("Invalid session token")
     
+    is_admin = (user.id == group.admin_id)
+    
+    if not is_admin:
+        return fail_response("This requires admin permission.")
+    
+    group.accepting_members = accepting_members
+    db.session.commit()
+
+    return success_response(group.serialize())
 
     
 
