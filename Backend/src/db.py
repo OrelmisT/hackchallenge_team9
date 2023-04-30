@@ -138,7 +138,7 @@ class Course(db.Model):
     
 
 
-#implementation not complete (we need to add in events and requests, and serialization funcs)
+
 class Group(db.Model):
     __tablename__ = "group"
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)

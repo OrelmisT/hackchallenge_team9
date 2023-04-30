@@ -334,7 +334,69 @@ def close_open_group(group_id):
 
     return success_response(group.serialize())
 
+#Requires membership in group to view requests to group
+@app.route("/groups/<int:group_id>/requests/", methods = ["GET"])
+def view_requests(group_id):
+
+    group = Group.query.filter_by(id = group_id).first()
+
+    if group is None:
+        return fail_response("Group with this id does not exist.")
     
+
+    
+    #Verifying session 
+    success, session_token = extract_token_from_header(request)
+    if not success:
+        return fail_response(session_token)
+    user = user_auth.get_user_by_session_token(session_token)
+    if user is None or not user.verify_session_token(session_token):
+        return fail_response("Invalid session token")
+    
+    #Checking if is member of group
+    preexisting_request = Request.query.filter_by(group_id = group_id, user_id = user.id, status = True).first()
+    is_admin = (user.id == group.admin_id)
+
+    if preexisting_request is None and (not is_admin):
+        return fail_response("User is not a member of this group")
+
+    requests = [r.serialize() for r in  Request.query.filter_by(group_id = group_id).all()]
+
+    return success_response({"requests": requests})
+
+@app.route("/requests/<int:request_id>/", methods = ["GET"])
+def get_request(request_id):
+
+    the_request = Request.query.filter_by(id=request_id).first()
+
+    if the_request is None:
+        return fail_response("Request does not exist.")
+    
+    group_id = the_request.group_id
+
+    group = Group.query.filter_by(id=group_id).first()
+
+    if group is None:
+        return fail_response("The group for which this request was made no longer exists.")
+    
+
+    #Verifying session 
+    success, session_token = extract_token_from_header(request)
+    if not success:
+        return fail_response(session_token)
+    user = user_auth.get_user_by_session_token(session_token)
+    if user is None or not user.verify_session_token(session_token):
+        return fail_response("Invalid session token")
+    
+    #Checking if is member of group
+    preexisting_request = Request.query.filter_by(group_id = group_id, user_id = user.id, status = True).first()
+    is_admin = (user.id == group.admin_id)
+
+    if preexisting_request is None and (not is_admin):
+        return fail_response("User is not a member of this group")
+    
+    return success_response(the_request.serialize())
+
 
 
 
