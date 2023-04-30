@@ -2,6 +2,8 @@ from db import db
 from flask import Flask, request
 import json
 from db import User
+from db import Course
+from db import Group
 import os
 import user_auth
 import datetime
@@ -40,6 +42,16 @@ def extract_token_from_header(request):
 
 #ROUTES
 #May have to edit response codes
+
+@app.route("/users/", methods = ["GET"])
+def get_all_users():
+    users = [u.serialize() for u in User.query.all()]
+    return success_response({"users": users})
+
+@app.route("/users/<string:net_id>/", methods = ["GET"])
+def get_user(net_id):
+    user = User.query.filter_by(net_id = net_id).first()
+    return success_response(user.serialize())
 
 @app.route("/register/", methods = ["POST"])
 def register_user():
@@ -115,6 +127,70 @@ def logout():
     user.session_expiration = datetime.datetime.now()
     db.session.commit()
     return success_response("Logged out successfully.")
+
+@app.route("/courses/", methods = ["POST"])
+def create_course():
+    body = json.loads(request.data)
+    course_title = body.get("course_title")
+    course_code = body.get("course_code")
+
+    if course_title is None or course_code is None:
+        return fail_response("Invalid course code or title.")
+    
+    optional_course = Course.query.filter_by(course_code = course_code).first()
+
+    if not (optional_course is None):
+        return fail_response("A course with this code already exists.")
+    
+    new_course = Course(course_title = course_title, course_code = course_code)
+    db.session.add(new_course)
+    db.session.commit()
+    return success_response(new_course.serialize())
+
+@app.route("/courses/", methods = ["GET"])
+def get_courses():
+    courses = [c.serialize() for c in Course.query.all()]
+    return success_response({"courses": courses})
+
+@app.route("/courses/<int:course_id>/", methods = ["GET"])
+def get_course(course_id):
+    course = Course.query.filter_by(id = course_id).first()
+    return success_response(course.serialize())
+
+@app.route("/groups/", methods = ["POST"])
+def create_group():
+    body = json.loads(request.data)
+    course_code = body.get("course_code")
+
+    if course_code is None:
+        return fail_response("Invalid course code.")
+
+
+    optional_course = Course.query.filter_by(course_code = course_code).first()
+
+    if optional_course is None:
+        return fail_response("There does not exist a course with this course code.")
+
+
+    #Verifying session 
+    success, session_token = extract_token_from_header(request)
+    if not success:
+        return fail_response(session_token)
+    user = user_auth.get_user_by_session_token(session_token)
+    if user is None or not user.verify_session_token(session_token):
+        return fail_response("Invalid session token")
+    
+    new_group = Group(admin_id = user.id, course_id = optional_course.id)
+    new_group.users.append(user)
+    db.session.add(new_group)
+    db.session.commit()
+
+    return success_response(new_group.serialize())
+    
+        
+
+
+
 
 
 

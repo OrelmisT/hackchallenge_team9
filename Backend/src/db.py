@@ -14,6 +14,11 @@ user_group_association_table = db.Table("user_group_assoc",
   db.Column("group_id", db.Integer, db.ForeignKey("group.id"))
 )
 
+user_event_association_table = db.Table("user_event_assoc",
+  db.Column("user_id", db.Integer, db.ForeignKey("user.id")),
+  db.Column("event_id", db.Integer, db.ForeignKey("event.id"))
+)
+
 #MODELS
 
 class User(db.Model):
@@ -25,6 +30,8 @@ class User(db.Model):
    bio = db.Column(db.String, nullable = True )
    groups = db.relationship("Group", secondary= user_group_association_table,
                              back_populates="users")
+   events_attending = db.relationship("Event", secondary= user_event_association_table,
+                             back_populates="attendees")
    password_digest =  db.Column(db.String, nullable=False)
 
    # Session information
@@ -114,6 +121,7 @@ class Course(db.Model):
    def serialize(self):
        return {
            "id": self.id,
+           "course_code": self.course_code,
            "course_title": self.course_title,
            "groups": [g.serialize_simple() for g in self.groups]
        }
@@ -121,6 +129,7 @@ class Course(db.Model):
    def serialize_simple(self):
        return{
            "id": self.id,
+           "course_code": self.course_code,
            "course_title": self.course_title
        }
 
@@ -156,7 +165,7 @@ class Group(db.Model):
             "accepting_members": self.accepting_members
         }
     
-    def serialize(self):
+    def serialize_simple(self):
         return{
             "id": self.id,
             "course_id": self.course_id,
@@ -171,13 +180,14 @@ class Event(db.Model):
     """
     Event object.
     """    
-    __tablename__ = "events"    
+    __tablename__ = "event"    
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable = False)    
     description = db.Column(db.String, nullable=False)
     location = db.Column(db.String, nullable=False)        
     time = db.Column(db.Integer, nullable=False)    
-    attendee = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    attendees = db.relationship("User", secondary= user_event_association_table,
+                             back_populates="events_attending")
 
     def __init__(self, **kwargs):
         """
@@ -192,13 +202,12 @@ class Event(db.Model):
         """
         Serialize an Event object.
         """
-        attendees = [a.serialize_wo() for a in self.user_id]
         return {
             "id": self.id,
             "description": self.description,
             "location": self.location,
             "time": self.time,
-            "attendee": attendees.serialize()
+            "attendee": [u.serialize() for u in self.attendees]
         }
 
 #class Request(db.Model)
