@@ -564,12 +564,22 @@ def get_events_attending(user_id):
     
     return success_response({"my_events": [u.serialize() for u in user.events_attending]})
 
+@app.route("/users/<int:user_id>/groups/", methods = ["GET"])
+def get_groups_by_user(user_id):
+    #Verifying session 
+    success, session_token = extract_token_from_header(request)
+    if not success:
+        return fail_response(session_token)
+    user = user_auth.get_user_by_session_token(session_token)
+    if user is None or not user.verify_session_token(session_token):
+        return fail_response("Invalid session token")
+    
+    if not (user.id == user_id):
+        return fail_response("You do not have permission to view this user's groups list.")
+    
+    return success_response({"my_groups": [g.serialize() for g in user.groups]})
     
 
-    
-
-    
-    
 
 
 if __name__ == "__main__":
