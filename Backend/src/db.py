@@ -88,20 +88,24 @@ class User(db.Model):
    #Serialization
    
    def serialize(self):
+       
+       #note: events being attended by a user are private to that user 
+       #although, those in the same group can see if that user is attending
+       #that group's events
+
        return{
            "id": self.id,
            "net_id": self.net_id,
            "name": self.name,
            "bio": self.bio,
-           "groups": [g.serialize_simple() for g in self.groups],
-           "events_attending": [e.serialize() for e in self.events_attending]
-
+           "groups": [g.serialize_simple() for g in self.groups]
        }
    def serialize_simple(self):
        return{
            "id": self.id,
            "net_id": self.net_id,
-           "name": self.name
+           "name": self.name,
+           "bio": self.bio
        }
        
    
@@ -151,20 +155,30 @@ class Group(db.Model):
       self.admin_id = kwargs.get("admin_id")
 
     def serialize(self):
+
+        #note: events and requests are private to the group. There are routes 
+        #specifically for getting events and requests for groups with 
+        #authorization.
+
+        course = Course.query.filter_by(id = self.course_id).first()
+
         return {
             "id": self.id,
-            "course_id" : self.course_id,
+            "course_id": self.course_id,
+            "course_code" : course.course_code,
             "admin_id" : self.admin_id,
             "users": [u.serialize_simple() for u in self.users],
-            "events": [e.serialize_simple() for e in self.events],
-            "requests": [r.serialize() for r in self.requests],
             "accepting_members": self.accepting_members
         }
     
     def serialize_simple(self):
+
+        course = Course.query.filter_by(id = self.course_id).first()
+
         return{
             "id": self.id,
             "course_id": self.course_id,
+            "course_code": course.course_code,
             "admin_id": self.admin_id,
             "accepting_members": self.accepting_members
         }
