@@ -37,9 +37,6 @@ def extract_token_from_header(request):
     if not bearer_token:
         return False, "Invalid auth header"
     return True, bearer_token
-    
-
-
 
 
 #ROUTES
@@ -522,6 +519,34 @@ def join_event(event_id):
     
     event.attendees.append(user)
     db.session.commit()
+    return success_response(event.serialize())
+
+@app.route("/events/<int:event_id>/", methods = ["DELETE"])
+def delete_event(event_id):
+    event = Event.query.filter_by(id = event_id).first()
+    if event_id is None:
+        return fail_response("No event with this id exists.")
+    
+    group = Group.query.filter_by(id = event.group_id).first()
+
+    #Verifying session 
+    success, session_token = extract_token_from_header(request)
+    if not success:
+        return fail_response(session_token)
+    user = user_auth.get_user_by_session_token(session_token)
+    if user is None or not user.verify_session_token(session_token):
+        return fail_response("Invalid session token")
+    
+    #Checking if is member of group
+    preexisting_request = Request.query.filter_by(group_id = group.id, user_id = user.id, status = True).first()
+    is_admin = (user.id == group.admin_id)
+
+    if preexisting_request is None and (not is_admin):
+        return fail_response("User is not a member of this group")
+    
+    db.session.delete(event)
+    db.session.commit()
+    
     return success_response(event.serialize())
 
     
