@@ -93,7 +93,7 @@ class User(db.Model):
            "net_id": self.net_id,
            "name": self.name,
            "bio": self.bio,
-           "groups": [g.serialize_simple for g in self.groups],
+           "groups": [g.serialize_simple() for g in self.groups],
            "events_attending": [e.serialize() for e in self.events_attending]
 
        }
