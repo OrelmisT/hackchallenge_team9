@@ -134,11 +134,6 @@ class Course(db.Model):
            "course_title": self.course_title
        }
 
-    
-    
-
-
-
 class Group(db.Model):
     __tablename__ = "group"
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
@@ -175,8 +170,6 @@ class Group(db.Model):
         }
    
         
-    
-# class Event(db.Model):
 class Event(db.Model):
     """
     Event object.
@@ -224,7 +217,6 @@ class Event(db.Model):
             "time": str(self.time)
         }
 
-#class Request(db.Model)
 class Request(db.Model):
     """
     Request object.
