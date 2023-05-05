@@ -42,7 +42,7 @@ class User(db.Model):
    def __init__(self, **kwargs):
       self.net_id = kwargs.get("net_id")
       self.name = kwargs.get("name")
-      self.bio = kwargs.get("bio")
+      self.bio = kwargs.get("bio", "")
       self.password_digest =  bcrypt.hashpw(kwargs.get("password").encode("utf8")
                                             , bcrypt.gensalt(rounds=13))
       self.renew_session()
